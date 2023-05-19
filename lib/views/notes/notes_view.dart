@@ -21,6 +21,7 @@ class _NotesViewState extends State<NotesView> {
     super.initState();
   }
 
+  // <-
   @override
   void dispose() {
     _notesService.close();
@@ -73,6 +74,7 @@ class _NotesViewState extends State<NotesView> {
                   builder: (context, snapshot) {
                     switch (snapshot.connectionState) {
                       case ConnectionState.waiting:
+                      case ConnectionState.active:
                         return const Text('Waiting for all notes...');
                       default:
                         return const CircularProgressIndicator();
