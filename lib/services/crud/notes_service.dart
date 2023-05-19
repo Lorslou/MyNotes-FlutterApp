@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:mynotes/services/crud/crud_exceptions.dart';
 import 'package:sqflite/sqflite.dart';
@@ -13,11 +12,17 @@ class NotesService {
 
   // we create a 3 deep layer singleton (until factory line)
   static final NotesService _shared = NotesService._sharedInstance();
-  NotesService._sharedInstance();
+  NotesService._sharedInstance() {
+    _notesStreamController = StreamController<List<DatabaseNote>>.broadcast(
+      onListen: () {
+        _notesStreamController.sink.add(_notes);
+      },
+    );
+  }
+
   factory NotesService() => _shared;
 
-  final _notesStreamController =
-      StreamController<List<DatabaseNote>>.broadcast();
+  late final StreamController<List<DatabaseNote>> _notesStreamController;
 
   Stream<List<DatabaseNote>> get allNotes => _notesStreamController.stream;
 
@@ -44,7 +49,7 @@ class NotesService {
 // opens the db
   Future<void> open() async {
     if (_db != null) {
-      throw DatabaseAlreadyOpenException;
+      throw DatabaseAlreadyOpenException();
     }
     try {
       final docsPath = await getApplicationDocumentsDirectory();
@@ -102,19 +107,23 @@ class NotesService {
   }
 
   Future<DatabaseUser> getUser({required String email}) async {
+    print('hola1');
     await _ensureDbIsOpen();
+    print('hola2');
     final db = _getDatabaseOrThrow();
-    final result = await db.query(
+
+    final results = await db.query(
       userTable,
       limit: 1,
       where: 'email = ?',
       whereArgs: [email.toLowerCase()],
     );
+    print(results.first.toString());
 
-    if (result.isEmpty) {
+    if (results.isEmpty) {
       throw CouldNotFindUser();
     } else {
-      return DatabaseUser.fromRow(result.first);
+      return DatabaseUser.fromRow(results.first);
     }
   }
 
@@ -124,6 +133,7 @@ class NotesService {
 
     //make sure owner exists in the db with the correct id
     final dbUser = await getUser(email: owner.email);
+    print(owner.toString() + 'hola');
     if (dbUser != owner) {
       throw CouldNotFindUser();
     }
@@ -219,10 +229,15 @@ class NotesService {
     await getNote(id: note.id);
 
     // update DB
-    final updatesCount = await db.update(noteTable, {
-      textColumn: text,
-      isSyncedWithCloudColumn: 0,
-    });
+    final updatesCount = await db.update(
+      noteTable,
+      {
+        textColumn: text,
+        isSyncedWithCloudColumn: 0,
+      },
+      where: 'id = ?',
+      whereArgs: [note.id],
+    );
 
     if (updatesCount == 0) {
       throw CouldNotUpdateNote();
