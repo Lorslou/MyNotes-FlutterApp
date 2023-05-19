@@ -10,8 +10,6 @@ class NotesService {
 
   List<DatabaseNote> _notes = [];
 
-  late final StreamController<List<DatabaseNote>> _notesStreamController;
-
   // we create a 3 deep layer singleton (until factory line)
   static final NotesService _shared = NotesService._sharedInstance();
   NotesService._sharedInstance() {
@@ -23,6 +21,8 @@ class NotesService {
   }
 
   factory NotesService() => _shared;
+
+  late final StreamController<List<DatabaseNote>> _notesStreamController;
 
   Stream<List<DatabaseNote>> get allNotes => _notesStreamController.stream;
 
@@ -49,7 +49,7 @@ class NotesService {
 // opens the db
   Future<void> open() async {
     if (_db != null) {
-      throw DatabaseAlreadyOpenException;
+      throw DatabaseAlreadyOpenException();
     }
     try {
       final docsPath = await getApplicationDocumentsDirectory();
@@ -235,6 +235,8 @@ class NotesService {
         textColumn: text,
         isSyncedWithCloudColumn: 0,
       },
+      where: 'id = ?',
+      whereArgs: [note.id],
     );
 
     if (updatesCount == 0) {
@@ -257,15 +259,12 @@ class NotesService {
   Future<DatabaseUser> getOrCreateUser({required String email}) async {
     try {
       final user = await getUser(email: email);
-      print(user.toString() + 'getorcreateuser');
       return user;
+    } on CouldNotFindUser {
+      final createdUser = await createUser(email: email);
+      return createdUser;
     } catch (e) {
-      if (e == CouldNotFindUser) {
-        final createdUser = await createUser(email: email);
-        return createdUser;
-      } else {
-        rethrow;
-      }
+      rethrow;
     }
   }
 
@@ -274,7 +273,6 @@ class NotesService {
       await open();
     } on DatabaseAlreadyOpenException {
       //empty
-      print('db already open excp');
     }
   }
 }
