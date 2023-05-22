@@ -127,7 +127,6 @@ class NotesService {
       where: 'email = ?',
       whereArgs: [email.toLowerCase()],
     );
-    print(results.first.toString());
 
     if (results.isEmpty) {
       throw CouldNotFindUser();
@@ -142,7 +141,6 @@ class NotesService {
 
     //make sure owner exists in the db with the correct id
     final dbUser = await getUser(email: owner.email);
-    print(owner.toString() + 'hola');
     if (dbUser != owner) {
       throw CouldNotFindUser();
     }
