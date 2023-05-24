@@ -33,6 +33,12 @@ class AuthEventShouldRegister extends AuthEvent {
   const AuthEventShouldRegister();
 }
 
+// recover password
+class AuthEventForgotPassword extends AuthEvent {
+  final String? email;
+  const AuthEventForgotPassword({this.email});
+}
+
 // logout the current user like authservice.firebase().logOut() in notes_view.dart
 class AuthEventLogOut extends AuthEvent {
   const AuthEventLogOut();
